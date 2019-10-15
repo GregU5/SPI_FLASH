@@ -52,6 +52,7 @@ struct SpiFlash {
 	unsigned int StartAddr;
 	unsigned int ActualAddr;
 	unsigned int NumberOfBytes;
+	uint8_t * buff;
 };
 
 /* Exported variables --------------------------------------------------------*/

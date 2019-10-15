@@ -11,9 +11,9 @@
 
 /* Exported define -----------------------------------------------------------*/
 //	SOFTWARE STATUS REGISTER - READ/WRITE BITS - flagi STATUS REGISTER do okreslenia stanu pamieci
-#define SPI_FLASH_SSR_BUSY_BIT						0x01						// READ - flaga zajêtosci, czy pamiec jest w trakcie wykonywania jakiejs operacji
+#define SPI_FLASH_SSR_BUSY_BIT						0x01						// READ - flaga zajÄ™tosci, czy pamiec jest w trakcie wykonywania jakiejs operacji
 #define SPI_FLASH_SSR_WEL_BIT						0x02						// READ - flaga zapisu, ustawiona sygnalizuje mozliwosc zapisu do pamieci
-#define SPI_FLASH_SSR_BP0_BIT						0x04						// READ/WRITE - poni¿sze bity sluz¹ do ochrony przed zapisem, strona 9 w dokumentacji
+#define SPI_FLASH_SSR_BP0_BIT						0x04						// READ/WRITE - poniÅ¼sze bity sluzÄ… do ochrony przed zapisem, strona 9 w dokumentacji
 #define	SPI_FLASH_SSR_BP1_BIT						0x08						// READ/WRITE
 #define	SPI_FLASH_SSR_BP2_BIT						0x10						// READ/WRITE
 #define SPI_FLASH_SSR_TB_BIT						0x20  						// READ/WRITE
@@ -32,8 +32,8 @@
 
 // BASE SIZES FOR PAGE, SECTOR AND BLOCK TO ADRRESS COUNT - rozmiary bloku, sektora i strony
 #define SPI_FLASH_SIZE								0x080000U				//rozmiar pamieci	- 4Mbit 	(512kB)
-#define SPI_FLASH_BLOCK_SIZE						0x010000U				//rozmiar bloku 	- 512kbit 	(64kB)
-#define SPI_FLASH_SECTOR_SIZE						0x001000U				//rozmiar sektora	- 32kbit 	(4kB)
+#define SPI_FLASH_BLOCK_SIZE							0x010000U				//rozmiar bloku 	- 512kbit 	(64kB)
+#define SPI_FLASH_SECTOR_SIZE							0x001000U				//rozmiar sektora	- 32kbit 	(4kB)
 #define SPI_FLASH_PAGE_SIZE							0x000100U				//rozmiar strony	- 2kbit		(256B)
 /* Exported types ------------------------------------------------------------*/
 
@@ -41,13 +41,13 @@
 //	Struktura do odczytu JEDEC-ID
 typedef struct {
 	char DevID;		//DEVICE ID
-	char MemType;	//MEMORY TYPES
-	char MemCap;	//MEMORY CAPACITY
-	char ResCode;	//RESERVED CODE
+	char MemType;		//MEMORY TYPES
+	char MemCap;		//MEMORY CAPACITY
+	char ResCode;		//RESERVED CODE
 } JEDEC;
 
 //	Struktura do zapisu i odczytu pamieci flash,
-//	przechowuje aktualny adres, ostatni adres i liczbe bajtow do odczytania/skopiowania
+//	przechowuje poczatkowy adres, ostatni adres i liczbe bajtow do odczytania/skopiowania
 struct SpiFlash {
 	unsigned int StartAddr;
 	unsigned int ActualAddr;
@@ -63,7 +63,7 @@ struct SpiFlash {
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 
-// Konfiguracja portów i inicjalizacja interfejsu do obs³ugi pamiêci flash
+// Konfiguracja portÃ³w i inicjalizacja interfejsu do obsÅ‚ugi pamiÄ™ci flash
 void SpiFlashInit(void);
 void SpiFlashDeinit(void);
 
@@ -75,19 +75,19 @@ void SpiFlashReadJedecID(JEDEC *xJedec);
 
 // Funkcja zapisuje SpiFlashPageProg do pamieci Flash stronami, maksymalna ilosc bajtow na strone to 256. Np. zapisanie 2 stron wymaga 2 krotnego wywolania.
 // 1 argument: wskaznik do adresu
-// 2 argument: liczba bajtów do zapisu(nie wieksza niz 256)
-// 3 argument: Ÿród³o
+// 2 argument: liczba bajtÃ³w do zapisu(nie wieksza niz 256)
+// 3 argument: ÅºrÃ³dÅ‚o
 int SpiFlashPageProg(unsigned int *address, unsigned int *num_of_bytes, unsigned char *src);
 
-// Funkcja SpiFlashReadByte odczytuje jeden bajt z pamiêci: Jako argument przyjmuje 24 bitowy adres
+// Funkcja SpiFlashReadByte odczytuje jeden bajt z pamiÄ™ci: Jako argument przyjmuje 24 bitowy adres
 // Zwaraca: bajt spod adresu pamieci
 unsigned char SpiFlashReadByte(unsigned int address);
 
 //  Funkcja SpiFlashIsDataIn sprawdza, czy pod danym adresem pamieci sa dane, jesli pamiec jest zapisana zwroci 1, jesli nie to 0
 unsigned int SpiFlashIsWrited(unsigned int address);
 
-// Funkcja SpiFlashReadData odczytuje dane z pamiêci Flash. 2 argumenty wywo³ania
-// 1 argument: xFlash jest wskaznik na strukture z adresem i liczba bajtów do odczytu - musi byc zdefiniowany wczesniej
+// Funkcja SpiFlashReadData odczytuje dane z pamiÄ™ci Flash. 2 argumenty wywoÅ‚ania
+// 1 argument: xFlash jest wskaznik na strukture z adresem i liczba bajtÃ³w do odczytu - musi byc zdefiniowany wczesniej
 // 2 argument: dst jest wskaznikiem na bufor do ktorego beda zapisane odczytane dane z pamieci Flash
 // Zwracajac 1 informuje o skonczonym odczycie danych
 int SpiFlashReadData(struct SpiFlash *xFlash, unsigned char *dst);
@@ -99,8 +99,8 @@ int SpiFlashReadData(struct SpiFlash *xFlash, unsigned char *dst);
 // -2: poza obszarem adresowym pamieci
 int SpiFlashWriteByte(unsigned int address, unsigned char byte);
 
-// Funkcja SpiFlashWriteData zapisuje dane do pamiêci Flash. 2 argumenty wywo³ania
-// 1 argument: xFlash jest wskaznikiem do struktury z adresem i liczb¹ bajtów do zapisu - struktura musi byc zdefiniowania wczesniej
+// Funkcja SpiFlashWriteData zapisuje dane do pamiÄ™ci Flash. 2 argumenty wywoÅ‚ania
+// 1 argument: xFlash jest wskaznikiem do struktury z adresem i liczbÄ… bajtÃ³w do zapisu - struktura musi byc zdefiniowania wczesniej
 // 2 argument: src jest wskaznikiem na bufor z ktorego funkcja odczyta i zapisze dane do Flash.
 // Funkcja zwraca:
 // -2: podany adres jest poza dostepna przestrzenia adresowa
@@ -123,7 +123,7 @@ int SpiFlashBlockNumErase(unsigned char number_of_block);
 // Calkowite wyczyszczenie flasha
 int SpiFlashFullErase(void);
 
-int SpiFlashWriteSR(unsigned char set_STATUS_REG);						// zapisuje do Status Register
+int SpiFlashWriteSR(unsigned char set_STATUS_REG);								// zapisuje do Status Register
 void SpiFlashWriteDisable(void);										// zablokowanie zapisu
 
 

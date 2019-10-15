@@ -14,34 +14,34 @@
 
 
 //	DEVICE COMMANDS FOR SST25PF040C - instrukcje dla pamieci flash
-#define	SPI_FLASH_CMD_READ_CONT						0x03 						// READ CONTINOUSLY - ci¹g³y odczyt pamiêci
+#define	SPI_FLASH_CMD_READ_CONT						0x03 						// READ CONTINOUSLY - ciÂ¹gÂ³y odczyt pamiÃªci
 #define SPI_FLASH_CMD_SECTOR_ERASE 					0x20 						// 1 SECTOR = 4kB - komenda czyszczenia sektora
 #define SPI_FLASH_CMD_BLOCK_ERASE					0xD8						// 1 BLOCK = 64kB - komenda czyszczenia bloku
 #define SPI_FLASH_CMD_CHIP_ERASE					0xC7						// FULL CHIP ERASE - wyczyszczenie calej pamieci
 #define SPI_FLASH_CMD_WRITE_EN						0x06						// WRITE ENABLE - zezwolenie na zapis do pamieci
 #define	SPI_FLASH_CMD_PAGE_PROGRAM					0x02						// 1 PAGE = 256B - programowanie stronami
 #define SPI_FLASH_CMD_READ_SSR						0x05						// READ SOFTWARE STATUS REGISTER - odczyt status register
-#define SPI_FLASH_CMD_WRITE_STATUS_REG				0x01						// WRITE/READ SOFTWARE STATUS REGISTER - zpais do status register
+#define SPI_FLASH_CMD_WRITE_STATUS_REG					0x01						// WRITE/READ SOFTWARE STATUS REGISTER - zpais do status register
 #define SPI_FLASH_CMD_READ_ID						0xAB						// READ DEVICE ID - odczyt id pamieci
 #define SPI_FLASH_CMD_JEDEC_ID						0x9F						// READ JEDEC ID - odczyt jedec id
 #define SPI_FLASH_CMD_DEEP_POWER_DM					0xB9						// DEEP POWER DOWN MODE - stan glebokiego uspienia
-#define SPI_DUMMY_DATA								0xFF 						// DUMMY DATA FOR SYNCHRONIC TRANSMISSION
+#define SPI_DUMMY_DATA							0xFF 						// DUMMY DATA FOR SYNCHRONIC TRANSMISSION
 
 /* Private const -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private functions prototypes ----------------------------------------------*/
-static unsigned int WaitForBusyFlag(void);										// czekaj az pamiec nie bedzie wykonywac operacji
-static void SpiFlashSendAddress(unsigned int address_24bit);					// wyslij 24 bitowy adress
+static unsigned int WaitForBusyFlag(void);									// czekaj az pamiec nie bedzie wykonywac operacji
+static void SpiFlashSendAddress(unsigned int address_24bit);							// wyslij 24 bitowy adress
 static unsigned char prvSpiFlashGetStatusReg(void);								// zwraca stan rejestru Status Register
-static unsigned int	prvIsWriteEnable(void);										// sprawdz, czy jest mozliwy zapis do pamieci
-static void prvSpiFlashWriteEnable(void);										// zezwolenie na zapis
+static unsigned int	prvIsWriteEnable(void);									// sprawdz, czy jest mozliwy zapis do pamieci
+static void prvSpiFlashWriteEnable(void);									// zezwolenie na zapis
 
 
 /* Public functions ----------------------------------------------------------*/
 void SpiFlashInit(void)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-	Spi2PinsSet();
+    GPIO_InitTypeDef GPIO_InitStructure;
+    Spi2PinsSet();
 
 	/* PB12 - CS */
     GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_12;
@@ -53,8 +53,8 @@ void SpiFlashInit(void)
     GPIO_SetBits(GPIOB, GPIO_Pin_12);
 
     /* Podpiecie zegara do GPIOD */
-	RCC_AHBPeriphClockCmd(RCC_AHBENR_GPIODEN, ENABLE);
-	/* PD8 - WP */
+    RCC_AHBPeriphClockCmd(RCC_AHBENR_GPIODEN, ENABLE);
+    /* PD8 - WP */
     GPIO_InitStructure.GPIO_Pin  = GPIO_Pin_8;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_40MHz;
@@ -63,9 +63,9 @@ void SpiFlashInit(void)
     GPIO_Init(GPIOD, &GPIO_InitStructure);
     GPIO_SetBits(GPIOD, GPIO_Pin_8);
 
-	/* HADWARE CONFIGURATION OF PORT AND INIT DEVICE*/
-	Spi2InterfaceSet();
-	SPI_Cmd(SPI2, ENABLE);
+    /* HADWARE CONFIGURATION OF PORT AND INIT DEVICE*/
+    Spi2InterfaceSet();
+    SPI_Cmd(SPI2, ENABLE);
 }
 
 unsigned char SpiFlashGetID(void)
@@ -108,7 +108,7 @@ unsigned char SpiFlashReadByte(unsigned int address)
 	}
 
 	SPI_FLASH_RESET_CS;
-	SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);					// komenda odczytu ciag³ego
+	SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);					// komenda odczytu ciagÂ³ego
 	SpiFlashSendAddress(address);								// 24bit adrress
 
 	byte = SpiReadByte(SPI2);
@@ -136,7 +136,7 @@ int SpiFlashReadData(struct SpiFlash *xFlash, unsigned char *dst)
 {
 	unsigned int i = 0;
 	SPI_FLASH_RESET_CS;
-	SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);					// komenda odczytu ciag³ego
+	SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);					// komenda odczytu ciagÂ³ego
 	SpiFlashSendAddress(xFlash->StartAddr);						// 24bit adrress
 	xFlash->ActualAddr = xFlash->StartAddr;
 
@@ -241,7 +241,7 @@ int SpiFlashWriteData(struct SpiFlash *xFlash, unsigned char *src)
 		{
 			unsigned int bytes = SPI_FLASH_PAGE_SIZE;
 			SpiFlashPageProg(&xFlash->ActualAddr, &bytes, src);						//zapisz strone (256bajtow)
-			NumberOfBytesWrote += SPI_FLASH_PAGE_SIZE;								//liczba zapisanych bajtów
+			NumberOfBytesWrote += SPI_FLASH_PAGE_SIZE;								//liczba zapisanych bajtÃ³w
 			page++;																	//po kazdym zapisie inkrementuj liczbe zapisanych stron
 		}
 		SpiFlashPageProg(&xFlash->ActualAddr, &LeftByteToWrite, src);				//zapisz pozostale bajty

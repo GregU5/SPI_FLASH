@@ -15,15 +15,17 @@
 /* Private functions prototypes ----------------------------------------------*/
 /* Public functions ----------------------------------------------------------*/
 
-// ustawienie pinÛw procesora
-// pin PB12 = SPI_CS (programowy)
-// pin PB13 = SPI2_SCK
-// pin PB14 = SPI2_MISO
-// pin PB15 = SPI2_MOSI
+/**
+ * ustawienie pin√≥w procesora
+ * pin PB12 = SPI_CS (programowy)
+ * pin PB13 = SPI2_SCK
+ * pin PB14 = SPI2_MISO
+ * pin PB15 = SPI2_MOSI
+ */
 void
 Spi2PinsSet(void)
 {
-	// POD£•CZENIE ZEGARA DO GPIOB
+	// POD≈ÅƒÑCZENIE ZEGARA DO GPIOB
 	RCC_AHBPeriphClockCmd(RCC_AHBENR_GPIOBEN, ENABLE);
 
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -59,7 +61,7 @@ Spi2PinsSet(void)
 void
 Spi2InterfaceSet(void)
 {
-	// POD£•CZENIE ZEGARA DO SPI2
+	// PODÔøΩÔøΩCZENIE ZEGARA DO SPI2
 	RCC_APB1PeriphClockCmd(RCC_APB1ENR_SPI2EN, ENABLE);
 	SPI_I2S_DeInit(SPI2);
 
@@ -101,14 +103,14 @@ unsigned char SpiSendByte(SPI_TypeDef *spi, unsigned char byte)
 unsigned char SpiReadByte(SPI_TypeDef *spi)
 {
 	unsigned char retval = 0;
-	//czekaj az zostanie wyzerowa flaga zajetosci bufora, 0 - pe≥ny bufor, 1 - pusty bufor
+	//czekaj az zostanie wyzerowa flaga zajetosci bufora, 0 - peÔøΩny bufor, 1 - pusty bufor
 	while(SPI_I2S_GetFlagStatus(spi, SPI_I2S_FLAG_TXE) == RESET)
 	{
 		//timeout
 	}
 	// wyslij bajt
 	SPI_I2S_SendData(spi, 0xFF);
-	//czekaj na odbiÛr danych, jesli 0 - bufor pusty, jesli 1 to bufor zapisany i gotowy do odczytu
+	//czekaj na odbiÔøΩr danych, jesli 0 - bufor pusty, jesli 1 to bufor zapisany i gotowy do odczytu
     while(SPI_I2S_GetFlagStatus(spi, SPI_I2S_FLAG_RXNE) == RESET)
     {
     	//timeout

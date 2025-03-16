@@ -89,15 +89,15 @@ uint8_t SpiFlashGetID(void)
     return retval;
 }
 
-void SpiFlashReadJedecID(jedec_t *xJedec)
+void SpiFlashReadJedecID(jedec_t *jedec)
 {
     SPI_FLASH_RESET_CS;
     SpiSendByte(SPI2, SPI_FLASH_CMD_JEDEC_ID);
 
-    xJedec->DevID = SpiReadByte(SPI2);
-    xJedec->MemType = SpiReadByte(SPI2);
-    xJedec->MemCap = SpiReadByte(SPI2);
-    xJedec->ResCode = SpiReadByte(SPI2);
+	jedec->DevID = SpiReadByte(SPI2);
+	jedec->MemType = SpiReadByte(SPI2);
+	jedec->MemCap = SpiReadByte(SPI2);
+	jedec->ResCode = SpiReadByte(SPI2);
 
     SPI_FLASH_SET_CS;
 }

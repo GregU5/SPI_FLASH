@@ -95,7 +95,7 @@ void SpiFlashReadJedecID(jedec_t *xJedec);
  * 2 argument: liczba bajtów do zapisu(nie wieksza niz 256)
  * 3 argument: źródło
  */
-int32_t SpiFlashPageProg(uint32_t *address, uint32_t *num_of_bytes, uint8_t *src);
+int32_t SpiFlashPageProg(uint32_t* address, uint32_t* num_of_bytes, uint8_t* src);
 
 /**
  * Funkcja SpiFlashReadByte odczytuje jeden bajt z pamięci: Jako argument przyjmuje 
@@ -118,7 +118,7 @@ uint32_t SpiFlashIsWrited(uint32_t address);
  * 
  * Zwracajac 1 informuje o skonczonym odczycie danych
  */
-int32_t SpiFlashReadData(struct SpiFlash *xFlash, uint8_t *dst);
+int32_t SpiFlashReadData(struct SpiFlash *xFlash, uint8_t* dst);
 
 /**
  * Funkcja SpiFlashWriteByte zapisuje 1 bajt do pamieci pod wskazany adres

@@ -4,7 +4,9 @@
 #define __IN_SPI_FLASH_C
 
 /* Includes ------------------------------------------------------------------*/
-#include <spi_flash.h>
+#include "spi_flash.h"
+
+#include <inttypes.h>
 
 /* Global variables ----------------------------------------------------------*/
 /* Private typedef -----------------------------------------------------------*/
@@ -12,9 +14,8 @@
 #define SPI_FLASH_SET_CS                       (GPIOB->BSRRL |= GPIO_BSRR_BS_12)
 #define SPI_FLASH_RESET_CS                     (GPIOB->BSRRH |= GPIO_BSRR_BS_12)
 
-
 /* DEVICE COMMANDS FOR SST25PF040C - instrukcje dla pamieci flash */
-#define	SPI_FLASH_CMD_READ_CONT             0x03        /* READ CONTINOUSLY - ci¹g³y odczyt pamiêci */
+#define	SPI_FLASH_CMD_READ_CONT             0x03        /* READ CONTINOUSLY - ciagly odczyt pamiêci */
 #define SPI_FLASH_CMD_SECTOR_ERASE          0x20        /* 1 SECTOR = 4kB - komenda czyszczenia sektora */
 #define SPI_FLASH_CMD_BLOCK_ERASE           0xD8        /* 1 BLOCK = 64kB - komenda czyszczenia bloku */
 #define SPI_FLASH_CMD_CHIP_ERASE            0xC7        /* FULL CHIP ERASE - wyczyszczenie calej pamieci */
@@ -31,12 +32,12 @@
 /* Private functions prototypes ----------------------------------------------*/
 
 /** czekaj az pamiec nie bedzie wykonywac operacji */
-static unsigned int WaitForBusyFlag(void);
+static uint32_t WaitForBusyFlag(void);
 /** wyslij 24 bitowy adress */
-static void SpiFlashSendAddress(unsigned int address_24bit);
+static void prvSpiFlashSendAddress(uint32_t address_24bit);
 /** sprawdz, czy jest mozliwy zapis do pamieci */
-static unsigned char prvSpiFlashGetStatusReg(void);
-static unsigned int	prvIsWriteEnable(void);
+static uint8_t prvSpiFlashGetStatusReg(void);
+static uint32_t	prvIsWriteEnable(void);
 /** zezwolenie na zapis */
 static void prvSpiFlashWriteEnable(void);
 
@@ -72,10 +73,10 @@ void SpiFlashInit(void)
     SPI_Cmd(SPI2, ENABLE);
 }
 
-unsigned char SpiFlashGetID(void)
+uint8_t SpiFlashGetID(void)
 {
-    unsigned char retval;
-    SPI_FLASH_SET_CS;
+    uint8_t retval = 0;
+
     SPI_FLASH_RESET_CS;
     SpiSendByte(SPI2, SPI_FLASH_CMD_READ_ID);
     SpiSendByte(SPI2, SPI_DUMMY_DATA);
@@ -88,9 +89,8 @@ unsigned char SpiFlashGetID(void)
     return retval;
 }
 
-void SpiFlashReadJedecID(JEDEC *xJedec)
+void SpiFlashReadJedecID(jedec_t *xJedec)
 {
-    SPI_FLASH_SET_CS;
     SPI_FLASH_RESET_CS;
     SpiSendByte(SPI2, SPI_FLASH_CMD_JEDEC_ID);
 
@@ -102,9 +102,9 @@ void SpiFlashReadJedecID(JEDEC *xJedec)
     SPI_FLASH_SET_CS;
 }
 
-unsigned char SpiFlashReadByte(unsigned int address)
+uint8_t SpiFlashReadByte(uint32_t address)
 {
-    unsigned char byte = 0;
+    uint8_t byte = 0;
     if (address >= SPI_FLASH_SIZE)
     {
         /* podany adres jest poza przestrzenia adresowa */
@@ -112,8 +112,8 @@ unsigned char SpiFlashReadByte(unsigned int address)
     }
 
     SPI_FLASH_RESET_CS;
-    SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);					// komenda odczytu ciag³ego
-    SpiFlashSendAddress(address);								// 24bit adrress
+    SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);   /* komenda odczytu ciagłego */
+    prvSpiFlashSendAddress(address);              /* 24bit address */
 
     byte = SpiReadByte(SPI2);
 
@@ -122,26 +122,26 @@ unsigned char SpiFlashReadByte(unsigned int address)
     return byte;
 }
 
-unsigned int SpiFlashIsWrited(unsigned int address)
+uint32_t SpiFlashIsWrited(uint32_t address)
 {
-    unsigned char data_read = 0;
+    uint8_t data_read = 0;
     data_read = SpiFlashReadByte(address);
 
-    if(data_read != 0xFF)
+    if (data_read != 0xFF)
     {
-        return 1; 												// flash zapisany
+        return 1;   /* flash zapisany */
     }
 
-    return 0;													// flash niezapisany
+    return 0;       /* flash niezapisany */
 }
 
 
-int SpiFlashReadData(struct SpiFlash *xFlash, unsigned char *dst)
+int32_t SpiFlashReadData(struct SpiFlash *xFlash, uint8_t* dst)
 {
-    unsigned int i = 0;
+    uint32_t i = 0; /* C89 style */
     SPI_FLASH_RESET_CS;
-    SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT);					// komenda odczytu ciag³ego
-    SpiFlashSendAddress(xFlash->StartAddr);						// 24bit adrress
+    SpiSendByte(SPI2, SPI_FLASH_CMD_READ_CONT); /* komenda odczytu ciagłego */
+    prvSpiFlashSendAddress(xFlash->StartAddr);  /* 24bit adrress */
     xFlash->ActualAddr = xFlash->StartAddr;
 
     for (; i < xFlash->NumberOfBytes; i++)
@@ -155,35 +155,35 @@ int SpiFlashReadData(struct SpiFlash *xFlash, unsigned char *dst)
     return 1;
 }
 
-int SpiFlashPageProg(unsigned int *address, unsigned int *num_of_bytes, unsigned char *src)
+int32_t SpiFlashPageProg(uint32_t* address, uint32_t* num_of_bytes, uint8_t* src)
 {
-    unsigned int i = 0;
+    uint32_t i = 0;
 
     if (*num_of_bytes > SPI_FLASH_PAGE_SIZE)
     {
-        //blad, nie mozna zapisac wiekszej ilosci bajtow niz jej rozmiar
+        /* blad, nie mozna zapisac wiekszej ilosci bajtow niz jej rozmiar */
         return -1;
     }
 
     prvSpiFlashWriteEnable();
-    //czy jest mozliwy zapis do pamieci
+    /* czy jest mozliwy zapis do pamieci */
     if (prvIsWriteEnable() == 0)
     {
         return -2;
     }
     SPI_FLASH_RESET_CS;
 
-    SpiSendByte(SPI2, SPI_FLASH_CMD_PAGE_PROGRAM);	//rozkaz page program
-    SpiFlashSendAddress(*address); 				//przeslij 24 bitowy adres
+    SpiSendByte(SPI2, SPI_FLASH_CMD_PAGE_PROGRAM);  /* rozkaz page program */
+    prvSpiFlashSendAddress(*address);               /* przeslij 24 bitowy adres */
     for (; i < *num_of_bytes; i++)
     {
         SpiSendByte(SPI2, *(src + i));
-        (*address)++;								//inkrementacja adresu
+        (*address)++;                               /* inkrementacja adresu */
     }
 
-    while((SPI2->SR & SPI_SR_BSY) == SPI_SR_BSY)
+    while ((SPI2->SR & SPI_SR_BSY) == SPI_SR_BSY)
     {
-        //todo: timeout
+        /* TODO: timeout */
     }
 
     SPI_FLASH_SET_CS;
@@ -192,9 +192,9 @@ int SpiFlashPageProg(unsigned int *address, unsigned int *num_of_bytes, unsigned
     return 1;
 }
 
-int SpiFlashWriteByte(unsigned int address, unsigned char byte)
+int32_t SpiFlashWriteByte(uint32_t address, uint8_t byte)
 {
-    unsigned int number_of_bytes = 1;
+    uint32_t number_of_bytes = 1;
 
 /*	if (SpiFlashIsDataIn(address) == 1)
     {
@@ -212,7 +212,7 @@ int SpiFlashWriteByte(unsigned int address, unsigned char byte)
     return 1;
 }
 
-int SpiFlashWriteData(struct SpiFlash *xFlash, unsigned char *src)
+int32_t SpiFlashWriteData(struct SpiFlash *xFlash, uint8_t* src)
 {
 /*	if (SpiFlashIsDataIn(xFlash->StartAddr) == 1)
     {
@@ -227,59 +227,59 @@ int SpiFlashWriteData(struct SpiFlash *xFlash, unsigned char *src)
 
     xFlash->ActualAddr = xFlash->StartAddr;
 
-    unsigned int NumberOfBytesWrote = 0;
-    unsigned int PagesToWrite = (xFlash->NumberOfBytes / SPI_FLASH_PAGE_SIZE);
-    unsigned int LeftByteToWrite = (xFlash->NumberOfBytes % SPI_FLASH_PAGE_SIZE);
+    uint32_t NumberOfBytesWrote = 0;
+    uint32_t PagesToWrite = (xFlash->NumberOfBytes / SPI_FLASH_PAGE_SIZE);
+    uint32_t LeftByteToWrite = (xFlash->NumberOfBytes % SPI_FLASH_PAGE_SIZE);
 /**
  * Pamiec programuje sie stronami. Rozmiar strony to 256 bajtow, aby zaprogramowac wiecej niz 1 strone na raz, trzeba wywolac funkcje z kolejnym poczatkowym adresem strony.
  * Dlatego sprawdzamy, czy podany adres jest poczatkiem strony, jesli jest to adres jest wyrownany, jesli nie to trzeba sprawdzic, ile mozemy zapisac do konca strony.
  */
-    unsigned int AddressIsNotAligned = xFlash->ActualAddr % SPI_FLASH_PAGE_SIZE; 	//sprawdz, czy adres jest wyrownany
-    unsigned int page = 0;															//aktualna liczba zapisanych stron
+    uint32_t AddressIsNotAligned = xFlash->ActualAddr % SPI_FLASH_PAGE_SIZE; 	/* sprawdz, czy adres jest wyrownany */
+    uint32_t page = 0;															/* aktualna liczba zapisanych stron */
 
-    // jesli adres jest wyrownany
+    /* jesli adres jest wyrownany */
     if (AddressIsNotAligned == 0)
     {
-        //Rob dopoki liczba aktualnych zapisanych stron nie pokryje sie z iloscia do zapisania
+        /* Rob dopoki liczba aktualnych zapisanych stron nie pokryje sie z iloscia do zapisania */
         while (page != PagesToWrite)
         {
             unsigned int bytes = SPI_FLASH_PAGE_SIZE;
-            SpiFlashPageProg(&xFlash->ActualAddr, &bytes, src);						//zapisz strone (256bajtow)
-            NumberOfBytesWrote += SPI_FLASH_PAGE_SIZE;								//liczba zapisanych bajtów
-            page++;																	//po kazdym zapisie inkrementuj liczbe zapisanych stron
+            SpiFlashPageProg(&xFlash->ActualAddr, &bytes, src);     /* zapisz strone (256bajtow) */
+            NumberOfBytesWrote += SPI_FLASH_PAGE_SIZE;              /* liczba zapisanych bajtów */
+            page++;                                                 /* po kazdym zapisie inkrementuj liczbe zapisanych stron */
         }
-        SpiFlashPageProg(&xFlash->ActualAddr, &LeftByteToWrite, src);				//zapisz pozostale bajty
+        SpiFlashPageProg(&xFlash->ActualAddr, &LeftByteToWrite, src);   /* zapisz pozostale bajty */
         NumberOfBytesWrote += LeftByteToWrite;
     }
-    //jesli adres nie jest wyrownany, obliczamy ilosc bajtow do konca strony
+    /* jesli adres nie jest wyrownany, obliczamy ilosc bajtow do konca strony */
     else
     {
-        unsigned int BytesToPageAddress = SPI_FLASH_PAGE_SIZE - AddressIsNotAligned;
-        //Sprawdz, czy liczba bajtow do zapisu jest wieksza od liczby wolnych bajtow do konca strony,
-        //jesli tak to zapisz wolne bajty do konca strony
+        uint32_t BytesToPageAddress = SPI_FLASH_PAGE_SIZE - AddressIsNotAligned;
+        /* Sprawdz, czy liczba bajtow do zapisu jest wieksza od liczby wolnych bajtow do konca strony */
+        /* jesli tak to zapisz wolne bajty do konca strony */
         if (xFlash->NumberOfBytes > BytesToPageAddress)
         {
             SpiFlashPageProg(&xFlash->ActualAddr, &BytesToPageAddress, src);
-            //Oblicz ile zostalo bajtow po wyrownaniu strony, bajty te zapiszemy na koncu, po zapisie stron
+            /* Oblicz ile zostalo bajtow po wyrownaniu strony, bajty te zapiszemy na koncu, po zapisie stron */
             LeftByteToWrite = (xFlash->NumberOfBytes - BytesToPageAddress) % SPI_FLASH_PAGE_SIZE;
             NumberOfBytesWrote += BytesToPageAddress;
 
-            //po zapisaniu wolnych bajtow strony, odejmij jedna strone, gdyz ilosc stron do zapisnaia zmniejszy sie o 1
+            /* po zapisaniu wolnych bajtow strony, odejmij jedna strone, gdyz ilosc stron do zapisnaia zmniejszy sie o 1 */
             if (PagesToWrite != 0)
             {
                 PagesToWrite--;
             }
         }
-        //Zapisz pozostale strony
+        /* Zapisz pozostale strony */
         while (page != PagesToWrite)
         {
-            unsigned int bytes = SPI_FLASH_PAGE_SIZE;
+            uint32_t bytes = SPI_FLASH_PAGE_SIZE;
             SpiFlashPageProg(&xFlash->ActualAddr, &bytes, src);
             NumberOfBytesWrote += SPI_FLASH_PAGE_SIZE;
             page++;
         }
 
-        //zapisanie pozostalych bajtow
+        /* zapisanie pozostalych bajtow */
         SpiFlashPageProg(&xFlash->ActualAddr, &LeftByteToWrite, src);
         NumberOfBytesWrote += LeftByteToWrite;
     }
@@ -287,28 +287,28 @@ int SpiFlashWriteData(struct SpiFlash *xFlash, unsigned char *src)
     return 1;
 }
 
-int SpiFlashSectorErase(unsigned int address)
+int32_t SpiFlashSectorErase(uint32_t address)
 {
     prvSpiFlashWriteEnable();
 
-    //czy jest mozliwy zapis do pamieci
+    /* czy jest mozliwy zapis do pamieci */
     if (prvIsWriteEnable() == 0)
     {
-        /*CANT SET WRITE ENABLE FLAG */
+        /* CANT SET WRITE ENABLE FLAG */
         return -1;
     }
 
     SPI_FLASH_RESET_CS;
     SpiSendByte(SPI2, SPI_FLASH_CMD_SECTOR_ERASE);
-    SpiFlashSendAddress(address);
+    prvSpiFlashSendAddress(address);
     SPI_FLASH_SET_CS;
 
-    WaitForBusyFlag();						//czekaj az flash zakonczy operacje
+    WaitForBusyFlag();      /* czekaj az flash zakonczy operacje */
 
     return 1;
 }
 
-int SpiFlashNumSectorErase(unsigned char number_of_sector)
+int32_t SpiFlashNumSectorErase(uint8_t number_of_sector)
 {
     if (number_of_sector > 127)
     {
@@ -316,28 +316,28 @@ int SpiFlashNumSectorErase(unsigned char number_of_sector)
         return 0;
     }
 
-    unsigned int address = 0;
-    //wyliczenie poczatku adresu dla danego sektora
-    address = (unsigned int) number_of_sector * SPI_FLASH_SECTOR_SIZE;
+    uint32_t address = 0;
+    /* wyliczenie poczatku adresu dla danego sektora */
+    address = (uint32_t) number_of_sector * SPI_FLASH_SECTOR_SIZE;
     SpiFlashSectorErase(address);
 
     return 1;
 }
 
-int SpiFlashBlockErase(unsigned int address)
+int32_t SpiFlashBlockErase(uint32_t address)
 {
     prvSpiFlashWriteEnable();
 
-    //sprawdz czy jest mozliwy zapis do pamieci
+    /* sprawdz czy jest mozliwy zapis do pamieci */
     if (prvIsWriteEnable() == 0)
     {
-        /*CANT SET WRITE ENABLE FLAG */
+        /* CANT SET WRITE ENABLE FLAG */
         return -1;
     }
 
     SPI_FLASH_RESET_CS;
     SpiSendByte(SPI2, SPI_FLASH_CMD_BLOCK_ERASE);
-    SpiFlashSendAddress(address);
+    prvSpiFlashSendAddress(address);
     SPI_FLASH_SET_CS;
 
     WaitForBusyFlag();
@@ -345,9 +345,9 @@ int SpiFlashBlockErase(unsigned int address)
     return 1;
 }
 
-int SpiFlashBlockNumErase(unsigned char number_of_block)
+int32_t SpiFlashBlockNumErase(uint8_t number_of_block)
 {
-    unsigned int address = 0;
+    uint32_t address = 0;
     if (number_of_block > 7)
     {
         return 0;
@@ -359,12 +359,12 @@ int SpiFlashBlockNumErase(unsigned char number_of_block)
 }
 
 
-int SpiFlashFullErase(void)
+int32_t SpiFlashFullErase(void)
 {
     prvSpiFlashWriteEnable();
     if (prvIsWriteEnable() == 0)
     {
-        /*CANT SET WRITE ENABLE FLAG */
+        /* CANT SET WRITE ENABLE FLAG */
         return -1;
     }
 
@@ -377,8 +377,8 @@ int SpiFlashFullErase(void)
     return 1;
 }
 
-// jeszcze nie wiem, czy beda prywatne - wyjdzie w trakcie pisania bootloadera
-int SpiFlashWriteSR(unsigned char set_STATUS_REG)
+/* jeszcze nie wiem, czy beda prywatne - wyjdzie w trakcie pisania bootloadera */
+int32_t SpiFlashWriteSR(uint8_t set_STATUS_REG)
 {
     prvSpiFlashWriteEnable();
     if (prvIsWriteEnable() == 0)
@@ -411,35 +411,35 @@ void SpiFlashWriteDisable(void)
 //                PIERWSZA GRUPA FUNKCJI PRYWATNYCH
 //
 //-----------------------------------------------------------------------------
-static unsigned int	WaitForBusyFlag(void)
+static uint32_t	WaitForBusyFlag(void)
 {
     /* czekaj az pamiec flash nie bedzie wykonywac operacji */
     while ( (prvSpiFlashGetStatusReg() & SPI_FLASH_SSR_BUSY_BIT) == SPI_FLASH_SSR_BUSY_BIT )
     {
-        //odczytaj status register pamieci flash - rejestr jest 8 bitowy
+        /* odczytaj status register pamieci flash - rejestr jest 8 bitowy */
         prvSpiFlashGetStatusReg();
         /*TODO: TIMEOUT */
     }
     return 1;
 }
 
-static void SpiFlashSendAddress(unsigned int address_24bit)
+static void prvSpiFlashSendAddress(uint32_t address_24bit)
 {
-    unsigned char temp_address = 0;
+    uint8_t temp_address = 0;
 
-    temp_address = (unsigned char) ( (address_24bit & 0xFF0000) >> 16);
+    temp_address = (uint8_t) ((address_24bit & 0xFF0000) >> 16);
     SpiSendByte(SPI2, temp_address); //1
-    temp_address = (unsigned char) ( (address_24bit & 0xFF00) >> 8);
+    temp_address = (uint8_t) ((address_24bit & 0xFF00) >> 8);
     SpiSendByte(SPI2, temp_address); //2
-    temp_address = (unsigned char) (address_24bit & 0xFF);
+    temp_address = (uint8_t) (address_24bit & 0xFF);
     SpiSendByte(SPI2, temp_address); //3
 }
 
-static unsigned int prvIsWriteEnable(void)
+static uint32_t prvIsWriteEnable(void)
 {
-    unsigned char sr = 0;
+    uint8_t sr = 0;
     sr = prvSpiFlashGetStatusReg();
-    if ( ( sr & SPI_FLASH_SSR_WEL_BIT ) == SPI_FLASH_SSR_WEL_BIT )
+    if ((sr & SPI_FLASH_SSR_WEL_BIT) == SPI_FLASH_SSR_WEL_BIT)
     {
         return 1;
     }
@@ -449,9 +449,9 @@ static unsigned int prvIsWriteEnable(void)
     }
 }
 
-static unsigned char prvSpiFlashGetStatusReg(void)
+static uint8_t prvSpiFlashGetStatusReg(void)
 {
-    char data;
+    uint8_t data = 0;
     SPI_FLASH_RESET_CS;
     SpiSendByte(SPI2, SPI_FLASH_CMD_READ_SSR);
     data = SpiReadByte(SPI2);
@@ -471,7 +471,6 @@ void prvSpiFlashWriteEnable(void)
     SpiSendByte(SPI2, SPI_FLASH_CMD_WRITE_EN);
     SPI_FLASH_SET_CS;
 }
-
 
 /* --------------------------------------------------------------------------------------------------------------- */
 
